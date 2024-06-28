@@ -20,11 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
 
-        $exceptions->renderable(fn (Throwable $e): JsonResponse => match(true) {
+        $exceptions->renderable(fn (Throwable $e): JsonResponse => match (true) {
 
-            $e instanceof BusinessException =>
-                response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST),
-            $e instanceof LogicalException =>
-                response()->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR)
+            $e instanceof BusinessException => response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST),
+            $e instanceof LogicalException => response()->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR),
+            default => response()->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR)
         });
     })->create();
