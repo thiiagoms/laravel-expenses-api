@@ -2,8 +2,8 @@
 
 namespace App\Messages\User;
 
-use App\Enums\User\NameEnum;
 use App\Enums\Auth\PasswordEnum;
+use App\Enums\User\NameEnum;
 use App\Messages\BaseMessage;
 
 abstract class UserMessage extends BaseMessage

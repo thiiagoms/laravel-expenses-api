@@ -7,7 +7,7 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     description: 'Base response for user crud operations',
     type: 'object',
-    title: "User response",
+    title: 'User response',
 )]
 class UserResponse
 {
