@@ -2,6 +2,7 @@
 
 use App\Exceptions\BusinessException;
 use App\Exceptions\LogicalException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,6 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
 
         $exceptions->renderable(fn (Throwable $e): JsonResponse => match (true) {
+            $e instanceof AuthenticationException =>
+                response()->json(['message' => $e->getMessage()], Response::HTTP_UNAUTHORIZED),
             $e instanceof BusinessException =>
                 response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST),
             $e instanceof LogicalException =>
