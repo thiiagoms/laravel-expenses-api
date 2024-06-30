@@ -8,6 +8,7 @@ use App\Messages\User\UserMessage;
 use App\Models\User;
 use App\Repositories\Contracts\User\UserContract;
 use App\Services\User\UserService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 dataset('find provider', fn (): array => [
@@ -162,6 +163,10 @@ test('create method', function (
             ->once()
             ->with($userDTO->toArray())
             ->andReturn($userModelMock);
+
+        DB::shouldReceive('transaction')
+            ->once()
+            ->andReturnUsing(fn (Closure $closure) => $closure());
     }
 
     /** @var UserService $userService */
