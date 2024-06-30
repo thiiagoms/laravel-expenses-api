@@ -13,6 +13,11 @@ abstract class AuthMessage extends BaseMessage
 
     public static function unauthorized(): string
     {
-        return 'Unauthorized';
+        return 'Unauthorized.';
+    }
+
+    public static function unauthenticated(): string
+    {
+        return 'Unauthenticated.';
     }
 }

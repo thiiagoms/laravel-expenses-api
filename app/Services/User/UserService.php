@@ -19,6 +19,15 @@ class UserService
      */
     public function __construct(private readonly UserContract $userRepository) {}
 
+    public function find(string $id): User|bool
+    {
+        if (! uuid_is_valid($id)) {
+            throw new LogicalException(SystemMessage::INVALID_PARAMETER);
+        }
+
+        return $this->userRepository->find($id);
+    }
+
     public function findBy(string $column, mixed $value, array $fields = ['*'], bool $all = false): Collection|User|bool
     {
         /** @var Collection|User|null $query */

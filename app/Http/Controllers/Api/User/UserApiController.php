@@ -6,6 +6,7 @@ use App\DTO\User\StoreUserDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Resources\User\UserShowResource;
+use App\Models\User;
 use App\Services\User\UserService;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -60,12 +61,33 @@ class UserApiController extends Controller
         return UserShowResource::make($user);
     }
 
+    #[OA\Get(
+        path: '/api/user',
+        tags: ['User'],
+        summary: 'Get authenticated user data',
+        security: ['bearerAuth'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success response',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        ref: '#/components/schemas/UserResponse'
+                    )
+                )
+            ),
+        ]
+    )]
     /**
-     * Display the specified resource.
+     * Return authenticated user
      */
-    public function show(string $id)
+    public function getUser(Request $request): UserShowResource
     {
-        //
+        $user = $this->userService->find($request->user('api')->id);
+
+        return UserShowResource::make($user);
     }
 
     /**

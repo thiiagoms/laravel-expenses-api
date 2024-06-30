@@ -47,6 +47,9 @@ expect()->extend('toBeOne', function () {
 |
 */
 
+const USER_ENDPOINT = '/api/user';
+
+
 function something()
 {
     // ..

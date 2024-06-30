@@ -10,6 +10,51 @@ use App\Repositories\Contracts\User\UserContract;
 use App\Services\User\UserService;
 use Illuminate\Support\Facades\Hash;
 
+dataset('find provider', fn (): array => [
+    'should throw exception when user id is not valid uuid' => [
+        'input' => fake()->name(),
+        'exception' => LogicalException::class,
+        'exceptionMessage' => SystemMessage::INVALID_PARAMETER,
+        'result' => null
+    ],
+    'should return false when user id is valid uuid but user does not exists' => [
+        'input' => fake()->uuid(),
+        'exception' => false,
+        'exceptionMessage' => false,
+        'result' => false
+    ],
+    'should return user when user id is valid uuid and user exists' => [
+        'input' => fake()->uuid(),
+        'exception' => false,
+        'exceptionMessage' => false,
+        'result' => new User()
+    ]
+]);
+
+test('find method', function (string $input, mixed $exception, string|bool $exceptionMessage, User|bool|null $result): void {
+
+    $userRepositoryMock = Mockery::mock(UserContract::class);
+
+    if ($exception) {
+        $this->expectException($exception);
+        $this->expectExceptionMessage($exceptionMessage);
+    } else {
+        $userRepositoryMock->shouldReceive('find')
+            ->once()
+            ->with($input)
+            ->andReturn($result);
+    }
+
+    /** @var UserService $userService */
+    $userService = resolve(UserService::class, ['userRepository' => $userRepositoryMock]);
+
+    /** @var User|bool $user*/
+    $user = $userService->find($input);
+
+    expect($user)->toBe($result);
+
+})->with('find provider');
+
 dataset('emailExists provider', fn (): array => [
     'should throw exception when user email is not valid email' => [
         'input' => fake()->name(),
