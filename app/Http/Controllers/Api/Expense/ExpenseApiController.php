@@ -6,8 +6,10 @@ use App\DTO\Expense\StoreExpenseDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Expense\StoreExpenseRequest;
 use App\Http\Resources\Expense\ExpenseShowResource;
+use App\Models\Expense;
 use App\Services\Expense\ExpenseService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use OpenApi\Attributes as OA;
 use OpenApi\Attributes\JsonContent;
 
@@ -73,12 +75,53 @@ class ExpenseApiController extends Controller
         return ExpenseShowResource::make($expense);
     }
 
+    #[OA\Get(
+        path: '/api/expense/{id}',
+        tags: ['Expense'],
+        summary: 'Retrieves the detailed expense record for the authenticated user.',
+        security: ['bearerAuth'],
+        description: "Retrieves the detailed expense record for the authenticated user but only expenses that the authenticated user has permission to view will be returned.",
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'The id (uuid) of the expense record to be retrieved.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success response',
+                content: new JsonContent(
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        ref: '#/components/schemas/ExpenseResponse'
+                    )
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'The server could not process the request due to invalid input.'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthorized'
+            ),
+        ]
+    )]
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Expense $expense): ExpenseShowResource
     {
-        //
+        Gate::authorize('view', $expense);
+
+        return ExpenseShowResource::make($expense);
     }
 
     /**
