@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Repositories\Contracts\Expense\ExpenseContract;
 use App\Repositories\Contracts\User\UserContract;
+use App\Repositories\ORM\Expense\ExpenseRepository;
 use App\Repositories\ORM\User\UserRepository;
 use Illuminate\Support\ServiceProvider;
 
@@ -14,6 +16,7 @@ class RepositoryProvider extends ServiceProvider
     public function register(): void
     {
         $repositories = [
+            ExpenseContract::class => ExpenseRepository::class,
             UserContract::class => UserRepository::class,
         ];
 

@@ -46,11 +46,15 @@ expect()->extend('toBeOne', function () {
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
-
-const USER_ENDPOINT = '/api/user';
-
-
 function something()
 {
     // ..
 }
+
+/*
+|--------------------------------------------------------------------------
+| Common endpoints
+|--------------------------------------------------------------------------
+*/
+const USER_ENDPOINT = '/api/user';
+const EXPENSE_ENDPOINT = '/api/expense';

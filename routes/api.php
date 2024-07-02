@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\Auth\AuthApiController;
+use App\Http\Controllers\Api\Expense\ExpenseApiController;
 use App\Http\Controllers\Api\User\UserApiController;
-use App\Http\Controllers\Expense\ExpenseApiController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -31,4 +31,11 @@ Route::middleware(['auth:api'])->group(function (): void {
     Route::prefix('user')->name('user.')->controller(UserApiController::class)->group(function () {
         Route::get('', 'getUser')->name('me');
     });
+
+    /**
+     * |----------------------------------
+     * | Expense routes
+     * |----------------------------------
+     */
+    Route::apiResource('expense', ExpenseApiController::class);
 });
