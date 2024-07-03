@@ -41,8 +41,7 @@ dataset('validate email provider', fn (): array => [
 
 test(
     'validate email',
-    fn (string $email, int $expectedStatus, Closure $expectedJson) =>
-    $this
+    fn (string $email, int $expectedStatus, Closure $expectedJson) => $this
         ->postJson(AUTH_ENDPOINT, ['email' => $email, 'password' => '@p5sSw0rd!'])
         ->assertStatus($expectedStatus)
         ->assertJson($expectedJson)
@@ -123,8 +122,7 @@ dataset('validate password provider', fn (): array => [
 
 test(
     'validate password',
-    fn (string $password, int $expectedStatus, Closure $expectedJson) =>
-    $this
+    fn (string $password, int $expectedStatus, Closure $expectedJson) => $this
         ->postJson(AUTH_ENDPOINT, ['email' => fake()->freeEmail(), 'password' => $password])
         ->assertStatus($expectedStatus)
         ->assertJson($expectedJson)
@@ -158,7 +156,7 @@ dataset('auth provider', fn (): array => [
     ],
 ]);
 
-test('auth', function (array $expectedData,int $expectedStatus, Closure $expectedJson): void {
+test('auth', function (array $expectedData, int $expectedStatus, Closure $expectedJson): void {
 
     User::factory()->createOne(['email' => 'ilovelaravel@gmail.com']);
 
@@ -166,4 +164,3 @@ test('auth', function (array $expectedData,int $expectedStatus, Closure $expecte
         ->assertStatus($expectedStatus)
         ->assertJson($expectedJson);
 })->with('auth provider');
-

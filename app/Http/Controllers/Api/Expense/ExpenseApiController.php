@@ -80,7 +80,7 @@ class ExpenseApiController extends Controller
         tags: ['Expense'],
         summary: 'Retrieves the detailed expense record for the authenticated user.',
         security: ['bearerAuth'],
-        description: "Retrieves the detailed expense record for the authenticated user but only expenses that the authenticated user has permission to view will be returned.",
+        description: 'Retrieves the detailed expense record for the authenticated user but only expenses that the authenticated user has permission to view will be returned.',
         parameters: [
             new OA\Parameter(
                 name: 'id',

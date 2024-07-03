@@ -16,20 +16,20 @@ dataset('find provider', fn (): array => [
         'input' => fake()->name(),
         'exception' => LogicalException::class,
         'exceptionMessage' => SystemMessage::INVALID_PARAMETER,
-        'result' => null
+        'result' => null,
     ],
     'should return false when user id is valid uuid but user does not exists' => [
         'input' => fake()->uuid(),
         'exception' => false,
         'exceptionMessage' => false,
-        'result' => false
+        'result' => false,
     ],
     'should return user when user id is valid uuid and user exists' => [
         'input' => fake()->uuid(),
         'exception' => false,
         'exceptionMessage' => false,
-        'result' => new User()
-    ]
+        'result' => new User(),
+    ],
 ]);
 
 test('find method', function (string $input, mixed $exception, string|bool $exceptionMessage, User|bool|null $result): void {
@@ -49,7 +49,7 @@ test('find method', function (string $input, mixed $exception, string|bool $exce
     /** @var UserService $userService */
     $userService = resolve(UserService::class, ['userRepository' => $userRepositoryMock]);
 
-    /** @var User|bool $user*/
+    /** @var User|bool $user */
     $user = $userService->find($input);
 
     expect($user)->toBe($result);

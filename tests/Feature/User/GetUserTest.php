@@ -10,8 +10,7 @@ test('should return unauthenticated when user not authenticated', function (): v
         ->getJson(USER_ENDPOINT)
         ->assertUnauthorized()
         ->assertJson(
-            fn (AssertableJson $json): AssertableJson =>
-            $json
+            fn (AssertableJson $json): AssertableJson => $json
                 ->has('message')
                 ->whereType('message', 'string')
                 ->where('message', AuthMessage::unauthenticated())
