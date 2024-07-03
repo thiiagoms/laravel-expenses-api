@@ -20,7 +20,7 @@ class ExpenseFactory extends Factory
     {
         return [
             'description' => fake()->sentence(),
-            'price' => fake()->randomFloat(),
+            'price' => fake()->randomFloat(2, 0, 9999),
             'date' => fake()->dateTimeBetween(Carbon::now()->subDays(30), Carbon::now())->format('Y-m-d H:i:s'),
             'user_id' => User::factory(),
         ];

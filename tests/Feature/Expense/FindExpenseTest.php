@@ -65,7 +65,7 @@ test('should return user expense when expense id exists and belongs to authentic
                 'data' => 'array',
                 'data.id' => 'string',
                 'data.description' => 'string',
-                'data.price' => 'string',
+                'data.price' => 'string|double',
                 'data.date' => 'string',
                 'data.created_at' => 'string',
                 'data.updated_at' => 'string',
