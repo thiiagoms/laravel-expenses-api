@@ -38,6 +38,10 @@ class ExpensePolicy
      */
     public function delete(User $user, Expense $expense): bool
     {
-        return $user->id === $expense->user->id;
+        if ($user->id !== $expense->user_id) {
+            throw new AuthorizationException(AuthMessage::unauthorized());
+        }
+
+        return true;
     }
 }

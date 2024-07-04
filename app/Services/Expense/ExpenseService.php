@@ -112,4 +112,13 @@ class ExpenseService
             return $this->find($expenseDTO->id);
         });
     }
+
+    public function destroy(string $id): bool
+    {
+        if (! $this->find($id)) {
+            throw new LogicalException(SystemMessage::RESOURCE_NOT_FOUND);
+        }
+
+        return DB::transaction(fn (): bool => $this->expenseRepository->destroy($id));
+    }
 }

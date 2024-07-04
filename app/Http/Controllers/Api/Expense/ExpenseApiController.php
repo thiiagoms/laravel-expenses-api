@@ -10,6 +10,8 @@ use App\Http\Requests\Expense\UpdateExpenseRequest;
 use App\Http\Resources\Expense\ExpenseShowResource;
 use App\Models\Expense;
 use App\Services\Expense\ExpenseService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use OpenApi\Attributes as OA;
 use OpenApi\Attributes\JsonContent;
@@ -235,11 +237,47 @@ class ExpenseApiController extends Controller
         return ExpenseShowResource::make($expense);
     }
 
+    #[OA\Delete(
+        path: '/api/expense/{id}',
+        tags: ['Expense'],
+        summary: 'Remove the specified resource from storage.',
+        security: ['bearerAuth'],
+        description: 'Remove the specified resource from storage but only expenses that the authenticated user has permission to delete will be deleted.',
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'The id (uuid) of the expense record to be deleted.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 204,
+                description: 'Operation success'
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'The server could not process the request due to invalid input.'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthorized'
+            ),
+        ]
+    )]
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Expense $expense): JsonResponse
     {
-        //
+        Gate::authorize('delete', $expense);
+
+        $this->expenseService->destroy($expense->id);
+
+        return response()->json([], Response::HTTP_NO_CONTENT);
     }
 }

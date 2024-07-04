@@ -434,3 +434,55 @@ test('update method should update expense and return updated expense data', func
         ->toBeInstanceOf(Expense::class)
         ->toEqual($updatedExpenseMock);
 });
+
+dataset('destroy provider', fn (): array => [
+    'should throw exception when expense id does not exists' => [
+        'input' => fake()->uuid(),
+        'exception' => LogicalException::class,
+        'exceptionMessage' => SystemMessage::RESOURCE_NOT_FOUND,
+        'result' => false,
+    ],
+    'should destroy expense and return true' => [
+        'input' => fake()->uuid(),
+        'exception' => false,
+        'exceptionMessage' => false,
+        'result' => true,
+    ],
+]);
+
+test('destroy method', function (string $input, mixed $exception, string|bool $exceptionMessage, bool $result): void {
+
+    $expenseRepositoryMock = Mockery::mock(ExpenseContract::class);
+
+    $expenseRepositoryMock->shouldReceive('find')
+        ->once()
+        ->with($input)
+        ->andReturn($result);
+
+    if ($exception) {
+        $this->expectException($exception);
+        $this->expectExceptionMessage($exceptionMessage);
+    } else {
+
+        $expenseRepositoryMock
+            ->shouldReceive('destroy')
+            ->once()
+            ->with($input)
+            ->andReturn($result);
+
+        DB::shouldReceive('transaction')
+            ->once()
+            ->andReturnUsing(function (Closure $closure): bool {
+                return $closure();
+            });
+    }
+
+    /** @var ExpenseService $expenseService */
+    $expenseService = resolve(ExpenseService::class, ['expenseRepository' => $expenseRepositoryMock]);
+
+    $output = $expenseService->destroy($input);
+
+    expect($output)
+        ->toBeBool()
+        ->toBe($result);
+})->with('destroy provider');
