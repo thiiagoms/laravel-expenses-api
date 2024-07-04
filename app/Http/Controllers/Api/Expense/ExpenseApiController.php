@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Api\Expense;
 
 use App\DTO\Expense\StoreExpenseDTO;
+use App\DTO\Expense\UpdateExpenseDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Expense\StoreExpenseRequest;
+use App\Http\Requests\Expense\UpdateExpenseRequest;
 use App\Http\Resources\Expense\ExpenseShowResource;
 use App\Models\Expense;
 use App\Services\Expense\ExpenseService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use OpenApi\Attributes as OA;
 use OpenApi\Attributes\JsonContent;
@@ -124,12 +125,114 @@ class ExpenseApiController extends Controller
         return ExpenseShowResource::make($expense);
     }
 
+    #[OA\Put(
+        path: '/api/expense/{id}',
+        tags: ['Expense'],
+        summary: 'Update the specified resource in storage.',
+        security: ['bearerAuth'],
+        description: 'Update the specified resource in storage but only expenses that the authenticated user has permission to update will be updated.',
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'The id (uuid) of the expense record to be updated.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            description: 'Expense data for update',
+            required: true,
+            content: new JsonContent(
+                ref: '#/components/schemas/ExpenseRequest'
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success response',
+                content: new JsonContent(
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        ref: '#/components/schemas/ExpenseResponse'
+                    )
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'The server could not process the request due to invalid input.'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthorized'
+            ),
+        ]
+    )]
+    #[OA\Patch(
+        path: '/api/expense/{id}',
+        tags: ['Expense'],
+        summary: 'Update the specified resource in storage.',
+        security: ['bearerAuth'],
+        description: 'Update the specified resource in storage but only expenses that the authenticated user has permission to update will be updated.',
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'The id (uuid) of the expense record to be updated.',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string'
+                )
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            description: 'Expense data for update',
+            required: true,
+            content: new JsonContent(
+                ref: '#/components/schemas/ExpenseRequest'
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Success response',
+                content: new JsonContent(
+                    type: 'array',
+                    items: new OA\Items(
+                        type: 'object',
+                        ref: '#/components/schemas/ExpenseResponse'
+                    )
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'The server could not process the request due to invalid input.'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthorized'
+            ),
+        ]
+    )]
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateExpenseRequest $request, Expense $expense): ExpenseShowResource
     {
-        //
+        Gate::authorize('update', $expense);
+
+        $expenseDTO = UpdateExpenseDTO::from([
+            'id' => $expense->id,
+            'user_id' => $request->user('api')->id,
+            ...$request->validated(),
+        ]);
+
+        $expense = $this->expenseService->update($expenseDTO);
+
+        return ExpenseShowResource::make($expense);
     }
 
     /**

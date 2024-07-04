@@ -26,6 +26,10 @@ class ExpensePolicy
      */
     public function update(User $user, Expense $expense): bool
     {
+        if ($user->id !== $expense->user_id) {
+            throw new AuthorizationException(AuthMessage::unauthorized());
+        }
+
         return true;
     }
 

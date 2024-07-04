@@ -3,6 +3,7 @@
 namespace App\Services\Expense;
 
 use App\DTO\Expense\StoreExpenseDTO;
+use App\DTO\Expense\UpdateExpenseDTO;
 use App\Enums\Expense\DescriptionEnum;
 use App\Events\Expense\CreateExpenseEvent;
 use App\Exceptions\BusinessException;
@@ -22,6 +23,15 @@ class ExpenseService
         private readonly ExpenseContract $expenseRepository,
         private readonly UserService $userService
     ) {}
+
+    public function find(string $id): Expense|bool
+    {
+        if (! uuid_is_valid($id)) {
+            throw new LogicalException(SystemMessage::INVALID_PARAMETER);
+        }
+
+        return $this->expenseRepository->find($id);
+    }
 
     private function validateDescription(string $description): void
     {
@@ -44,7 +54,7 @@ class ExpenseService
         }
     }
 
-    private function validateExpense(StoreExpenseDTO $expenseDTO): void
+    private function validateExpense(StoreExpenseDTO|UpdateExpenseDTO $expenseDTO): void
     {
         if (! empty($expenseDTO->description)) {
             $this->validateDescription($expenseDTO->description);
@@ -80,6 +90,26 @@ class ExpenseService
             event(new CreateExpenseEvent($expense));
 
             return $expense;
+        });
+    }
+
+    public function update(UpdateExpenseDTO $expenseDTO): Expense
+    {
+        $this->validateExpense($expenseDTO);
+
+        if (! $this->userExists($expenseDTO->user_id) || ! $this->find($expenseDTO->id)) {
+            throw new LogicalException(SystemMessage::RESOURCE_NOT_FOUND);
+        }
+
+        return DB::transaction(function () use ($expenseDTO): Expense {
+
+            $dataToUpdate = removeEmpty($expenseDTO->toArray());
+
+            if (! $this->expenseRepository->update($expenseDTO->id, $dataToUpdate)) {
+                throw new LogicalException(SystemMessage::GENERIC_ERROR);
+            }
+
+            return $this->find($expenseDTO->id);
         });
     }
 }

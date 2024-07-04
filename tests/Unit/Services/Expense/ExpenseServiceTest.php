@@ -1,6 +1,7 @@
 <?php
 
 use App\DTO\Expense\StoreExpenseDTO;
+use App\DTO\Expense\UpdateExpenseDTO;
 use App\Enums\Expense\DescriptionEnum;
 use App\Events\Expense\CreateExpenseEvent;
 use App\Exceptions\BusinessException;
@@ -15,6 +16,56 @@ use App\Services\User\UserService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+
+dataset('find provider', fn (): array => [
+    'should throw exception when id is not a valid uuid' => [
+        'input' => fake()->name(),
+        'exception' => LogicalException::class,
+        'exceptionMessage' => SystemMessage::INVALID_PARAMETER,
+        'result' => null,
+    ],
+    'should return false when id is a valid uuid but expense does not exists' => [
+        'input' => fake()->uuid(),
+        'exception' => false,
+        'exceptionMessage' => false,
+        'result' => false,
+    ],
+    'should return expense when id is a valid uuid and expense exists' => [
+        'input' => fake()->uuid(),
+        'exception' => false,
+        'exceptionMessage' => false,
+        'result' => new Expense(),
+    ],
+]);
+
+test('find method', function (
+    string $input,
+    mixed $exception,
+    string|bool $exceptionMessage,
+    Expense|bool|null $result
+): void {
+
+    $expenseRepositoryMock = Mockery::mock(ExpenseContract::class);
+
+    if ($exception) {
+        $this->expectException($exception);
+        $this->expectExceptionMessage($exceptionMessage);
+    } else {
+
+        $expenseRepositoryMock
+            ->shouldReceive('find')
+            ->with($input)
+            ->once()
+            ->andReturn($result);
+    }
+
+    /** @var ExpenseService $expenseService */
+    $expenseService = resolve(ExpenseService::class, ['expenseRepository' => $expenseRepositoryMock]);
+
+    $output = $expenseService->find($input);
+
+    expect($output)->toBe($result);
+})->with('find provider');
 
 dataset('validateDescription provider', fn (): array => [
     'should throw exception when description is higher than max length' => [
@@ -260,4 +311,126 @@ test('create method should create expense and return created expense data', func
         ->not->toBeEmpty()
         ->toBeInstanceOf(Expense::class)
         ->toEqual($expenseMock);
+});
+
+test('update method should throw exception when user does not exists', function (): void {
+
+    $expenseDTO = UpdateExpenseDTO::from([
+        'id' => fake()->uuid(),
+        'user_id' => fake()->uuid(),
+        'description' => str_repeat('#', DescriptionEnum::MAX_LENGTH->value),
+        'price' => fake()->randomFloat(),
+        'date' => Carbon::now(),
+    ]);
+
+    $userServiceMock = Mockery::mock(UserService::class);
+
+    $userServiceMock->shouldReceive('find')
+        ->once()
+        ->with($expenseDTO->user_id)
+        ->andReturnFalse();
+
+    /** @var ExpenseService $expenseService */
+    $expenseService = resolve(ExpenseService::class, ['userService' => $userServiceMock]);
+
+    $this->expectException(LogicalException::class);
+    $this->expectExceptionMessage(SystemMessage::RESOURCE_NOT_FOUND);
+
+    $expenseService->update($expenseDTO);
+});
+
+test('update method should throw exception when expense does not exists', function (): void {
+
+    $expenseDTO = UpdateExpenseDTO::from([
+        'id' => fake()->uuid(),
+        'user_id' => fake()->uuid(),
+        'description' => str_repeat('#', DescriptionEnum::MAX_LENGTH->value),
+        'price' => fake()->randomFloat(),
+        'date' => Carbon::now(),
+    ]);
+
+    $expenseRepositoryMock = Mockery::mock(ExpenseContract::class);
+
+    $expenseRepositoryMock->shouldReceive('find')
+        ->once()
+        ->with($expenseDTO->id)
+        ->andReturnFalse();
+
+    $userServiceMock = Mockery::mock(UserService::class);
+
+    $userServiceMock->shouldReceive('find')
+        ->once()
+        ->with($expenseDTO->user_id)
+        ->andReturn(new User(['id' => $expenseDTO->user_id]));
+
+    /** @var ExpenseService $expenseService */
+    $expenseService = resolve(ExpenseService::class, [
+        'userService' => $userServiceMock,
+        'expenseRepository' => $expenseRepositoryMock,
+    ]);
+
+    $this->expectException(LogicalException::class);
+    $this->expectExceptionMessage(SystemMessage::RESOURCE_NOT_FOUND);
+
+    $expenseService->update($expenseDTO);
+});
+
+test('update method should update expense and return updated expense data', function (): void {
+
+    $userMok = new User(['id' => fake()->uuid(), 'name' => fake()->name(), 'email' => fake()->freeEmail()]);
+
+    $expenseMock = new Expense([
+        'id' => fake()->uuid(),
+        'user_id' => $userMok->id,
+        'description' => str_repeat('#', DescriptionEnum::MAX_LENGTH->value),
+        'price' => fake()->randomFloat(),
+        'date' => Carbon::now(),
+    ]);
+
+    $updatedExpenseMock = new Expense([
+        'id' => $expenseMock->id,
+        'user_id' => $userMok->id,
+        'description' => fake()->sentence(),
+        'price' => fake()->randomFloat(),
+    ]);
+
+    $expenseDTO = UpdateExpenseDTO::from($updatedExpenseMock->toArray());
+
+    $userServiceMock = Mockery::mock(UserService::class);
+
+    $userServiceMock->shouldReceive('find')
+        ->once()
+        ->with($expenseDTO->user_id)
+        ->andReturn($userMok);
+
+    $expenseRepositoryMock = Mockery::mock(ExpenseContract::class);
+
+    $expenseRepositoryMock->shouldReceive('find')
+        ->twice()
+        ->with($expenseDTO->id)
+        ->andReturnUsing(fn (): Expense => $expenseMock, fn (): Expense => $updatedExpenseMock);
+
+    $expenseRepositoryMock->shouldReceive('update')
+        ->once()
+        ->with($expenseDTO->id, removeEmpty($expenseDTO->toArray()))
+        ->andReturnTrue();
+
+    DB::shouldReceive('transaction')
+        ->once()
+        ->andReturnUsing(function (Closure $closure): Expense {
+            return $closure();
+        });
+
+    $expenseService = resolve(ExpenseService::class, [
+        'userService' => $userServiceMock,
+        'expenseRepository' => $expenseRepositoryMock,
+    ]);
+
+    /** @var Expense $expense */
+    $expense = $expenseService->update($expenseDTO);
+
+    expect($expense)
+        ->not->toBeEmpty()
+        ->toBeInstanceOf(Expense::class)
+        ->toEqual($updatedExpenseMock);
 });
