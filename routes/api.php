@@ -30,6 +30,8 @@ Route::middleware(['auth:api'])->group(function (): void {
 
     Route::prefix('user')->name('user.')->controller(UserApiController::class)->group(function () {
         Route::get('', 'getUser')->name('me');
+        Route::patch('', 'update')->name('update');
+        Route::put('', 'update');
     });
 
     /**

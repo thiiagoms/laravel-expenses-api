@@ -1,6 +1,7 @@
 <?php
 
 use App\DTO\User\StoreUserDTO;
+use App\DTO\User\UpdateUserDTO;
 use App\Exceptions\BusinessException;
 use App\Exceptions\LogicalException;
 use App\Messages\System\SystemMessage;
@@ -183,3 +184,103 @@ test('create method', function (
             Hash::check($userDTO->password, $result->password)
         )->toBeTrue();
 })->with('create provider');
+
+test('update method should throw exception when user does not exists', function (): void {
+
+    $updateUserDTO = UpdateUserDTO::from([
+        'id' => fake()->uuid(),
+    ]);
+
+    $userRepositoryMock = Mockery::mock(UserContract::class);
+
+    $userRepositoryMock->shouldReceive('find')
+        ->once()
+        ->with($updateUserDTO->id)
+        ->andReturnFalse();
+
+    /** @var UserService $userService */
+    $userService = resolve(UserService::class, ['userRepository' => $userRepositoryMock]);
+
+    $this->expectException(LogicalException::class);
+    $this->expectExceptionMessage(SystemMessage::RESOURCE_NOT_FOUND);
+
+    $userService->update($updateUserDTO);
+});
+
+test('update method should throw exception when email already exits and email does not belongs to the user', function (): void {
+
+    $updateUserDTO = UpdateUserDTO::from([
+        'id' => fake()->uuid(),
+        'email' => fake()->freeEmail(),
+    ]);
+
+    $userRepositoryMock = Mockery::mock(UserContract::class);
+
+    $userRepositoryMock->shouldReceive('find')
+        ->once()
+        ->with($updateUserDTO->id)
+        ->andReturn(new User(['email' => 'ilovelaravel@gmail.com']));
+
+    $userRepositoryMock->shouldReceive('findBy')
+        ->once()
+        ->with('email', $updateUserDTO->email, ['email'], false)
+        ->andReturn(new User(['email' => $updateUserDTO->email]));
+
+    /** @var UserService $userService */
+    $userService = resolve(UserService::class, ['userRepository' => $userRepositoryMock]);
+
+    $this->expectException(BusinessException::class);
+    $this->expectExceptionMessage(UserMessage::emailAlreadyExists());
+
+    $userService->update($updateUserDTO);
+});
+
+test('update method should update user and return updated user data', function (): void {
+
+    $userMock = new User(['id' => fake()->uuid(), 'name' => fake()->name(), 'email' => fake()->freeEmail()]);
+
+    $updateUserDTO = UpdateUserDTO::from([
+        'id' => $userMock->id,
+        'name' => fake()->name(),
+        'email' => fake()->freeEmail(),
+    ]);
+
+    $userRepositoryMock = Mockery::mock(UserContract::class);
+
+    $userRepositoryMock->shouldReceive('find')
+        ->twice()
+        ->with($updateUserDTO->id)
+        ->andReturnUsing(
+            fn (): User => $userMock,
+            fn (): User => new User([
+                'id' => $userMock->id,
+                'name' => $updateUserDTO->name,
+                'email' => $updateUserDTO->email,
+            ])
+        );
+
+    $userRepositoryMock->shouldReceive('findBy')
+        ->once()
+        ->with('email', $updateUserDTO->email, ['email'], false)
+        ->andReturnFalse();
+
+    $userRepositoryMock->shouldReceive('update')
+        ->once()
+        ->with($userMock->id, removeEmpty($updateUserDTO->toArray()))
+        ->andReturnTrue();
+
+    DB::shouldReceive('transaction')
+        ->once()
+        ->andReturnUsing(fn (Closure $closure): User => $closure());
+
+    /** @var UserService $userService */
+    $userService = resolve(UserService::class, ['userRepository' => $userRepositoryMock]);
+
+    /** @var User $result */
+    $result = $userService->update($updateUserDTO);
+
+    expect($result)
+        ->not->toBe($userMock)
+        ->and($updateUserDTO->name)->toBe($result->name)
+        ->and($updateUserDTO->email)->toBe($result->email);
+});

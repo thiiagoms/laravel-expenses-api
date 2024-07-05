@@ -3,6 +3,7 @@
 namespace App\Services\User;
 
 use App\DTO\User\StoreUserDTO;
+use App\DTO\User\UpdateUserDTO;
 use App\Exceptions\BusinessException;
 use App\Exceptions\LogicalException;
 use App\Messages\System\SystemMessage;
@@ -55,5 +56,27 @@ class UserService
         }
 
         return DB::transaction(fn (): User => $this->userRepository->create($userDTO->toArray()));
+    }
+
+    public function update(UpdateUserDTO $userDTO): User
+    {
+        if (! $user = $this->find($userDTO->id)) {
+            throw new LogicalException(SystemMessage::RESOURCE_NOT_FOUND);
+        }
+
+        if (isset($userDTO->email) && $userDTO->email !== $user->email && $this->emailExists($userDTO->email)) {
+            throw new BusinessException(UserMessage::emailAlreadyExists());
+        }
+
+        return DB::transaction(function () use ($userDTO): User {
+
+            $dataToUpdate = removeEmpty($userDTO->toArray());
+
+            if (! $this->userRepository->update($userDTO->id, $dataToUpdate)) {
+                throw new LogicalException(SystemMessage::GENERIC_ERROR);
+            }
+
+            return $this->find($userDTO->id);
+        });
     }
 }
