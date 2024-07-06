@@ -47,10 +47,10 @@ thiiagoms@e795fc12781f:/var/www$ php artisan l5-swagger:generate
 
 - `http://localhost:8000/api` - to use application
 
-## Tests and list
+## Tests and lint
 
 1. To run tests and lint:
 
 ```shell
 thiiagoms@e795fc12781f:/var/www$ php artisan tests
-thiiagoms@e795fc12781f:/var/www$ composer pint
+thiiagoms@e795fc12781f:/var/www$ composer pint app tests
