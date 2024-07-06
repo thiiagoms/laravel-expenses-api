@@ -32,6 +32,8 @@ Route::middleware(['auth:api'])->group(function (): void {
         Route::get('', 'getUser')->name('me');
         Route::patch('', 'update')->name('update');
         Route::put('', 'update');
+        Route::delete('', 'destroy')->name('destroy');
+
     });
 
     /**

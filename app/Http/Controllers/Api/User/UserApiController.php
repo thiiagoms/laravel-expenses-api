@@ -10,7 +10,9 @@ use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Resources\User\UserShowResource;
 use App\Models\User;
 use App\Services\User\UserService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use OpenApi\Attributes as OA;
 use OpenApi\Attributes\JsonContent;
 
@@ -175,11 +177,33 @@ class UserApiController extends Controller
         return UserShowResource::make($user);
     }
 
+    #[OA\Delete(
+        path: '/api/user',
+        tags: ['User'],
+        summary: 'Delete authenticated user data',
+        security: ['bearerAuth'],
+        responses: [
+            new OA\Response(
+                response: 204,
+                description: 'Success response',
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'The server could not process the request due to invalid input.'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'The requested resource could not be found.'
+            ),
+        ]
+    )]
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request): JsonResponse
     {
-        //
+        $this->userService->destroy($request->user('api')->id);
+
+        return response()->json([], Response::HTTP_NO_CONTENT);
     }
 }

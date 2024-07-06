@@ -284,3 +284,52 @@ test('update method should update user and return updated user data', function (
         ->and($updateUserDTO->name)->toBe($result->name)
         ->and($updateUserDTO->email)->toBe($result->email);
 });
+
+dataset('destroy provider', fn (): array => [
+    'should throw exception when id is valid uuid but user does not exists' => [
+        'input' => fake()->uuid(),
+        'exception' => LogicalException::class,
+        'exceptionMessage' => SystemMessage::RESOURCE_NOT_FOUND,
+        'result' => false,
+    ],
+    'should return true when id is valid uuid and user exists' => [
+        'input' => fake()->uuid(),
+        'exception' => false,
+        'exceptionMessage' => false,
+        'result' => true,
+    ],
+]);
+
+test('destroy method', function (string $input, mixed $exception, string|bool $exceptionMessage, ?bool $result): void {
+
+    $userRepositoryMock = Mockery::mock(UserContract::class);
+
+    $userRepositoryMock->shouldReceive('find')
+        ->once()
+        ->with($input)
+        ->andReturn($result);
+
+    if ($exception) {
+        $this->expectException($exception);
+        $this->expectExceptionMessage($exceptionMessage);
+    } else {
+
+        $userRepositoryMock->shouldReceive('destroy')
+            ->once()
+            ->with($input)
+            ->andReturn($result);
+
+        DB::shouldReceive('transaction')
+            ->once()
+            ->andReturnUsing(fn (Closure $closure) => $closure());
+    }
+
+    /** @var UserService $userService */
+    $userService = resolve(UserService::class, ['userRepository' => $userRepositoryMock]);
+
+    $output = $userService->destroy($input);
+
+    expect($output)
+        ->toBe($result);
+
+})->with('destroy provider');

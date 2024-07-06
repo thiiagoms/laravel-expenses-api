@@ -79,4 +79,13 @@ class UserService
             return $this->find($userDTO->id);
         });
     }
+
+    public function destroy(string $id): bool
+    {
+        if (! $this->find($id)) {
+            throw new LogicalException(SystemMessage::RESOURCE_NOT_FOUND);
+        }
+
+        return DB::transaction(fn (): bool => $this->userRepository->destroy($id));
+    }
 }
