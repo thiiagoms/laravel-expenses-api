@@ -9,7 +9,7 @@
 1. Clone the repository and go to `expenses` directory:
 
 ```shell
-git clone https://github.com/thiiagoms/expenses
+git clone https://github.com/thiiagoms/laravel-expenses-api expenses
 cd expenses
 ```
 
